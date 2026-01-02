@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>知識分享平台 | Knowledge Hub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --color-cream: #F5F1EE;
+            --color-latte: #E8DED3;
+            --color-mocha: #BCA38E;
+            --color-espresso: #634E42;
+            --color-milk-tea: #D9C5B2;
+        }
+
+        body {
+            background-color: var(--color-cream);
+            color: var(--color-espresso);
+            font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+        }
+
+        .sidebar {
+            background-color: var(--color-latte);
+            border-right: 1px solid var(--color-milk-tea);
+        }
+
+        .active-file {
+            background-color: var(--color-mocha);
+            color: white;
+        }
+
+        .btn-primary {
+            background-color: var(--color-mocha);
+            color: white;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--color-espresso);
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.4);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        /* 自定義捲軸 */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--color-cream);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--color-milk-tea);
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body class="h-screen flex flex-col">
+
+    <!-- 頂部導航 -->
+    <header class="h-16 flex items-center justify-between px-8 bg-white shadow-sm z-10">
+        <div class="flex items-center space-x-2">
+            <i class="fas fa-book-open text-2xl text-[var(--color-mocha)]"></i>
+            <span class="text-xl font-bold tracking-wider">知識分享專區</span>
+        </div>
+        <nav class="flex space-x-6">
+            <button onclick="switchTab('viewer')" class="hover:text-[var(--color-mocha)] transition">文檔閱覽</button>
+            <button onclick="switchTab('download')" class="hover:text-[var(--color-mocha)] transition">下載專區</button>
+        </nav>
+    </header>
+
+    <main class="flex-1 flex overflow-hidden">
+        
+        <!-- 頁面 1: 文檔閱覽器 -->
+        <div id="viewer-section" class="flex flex-1 w-full">
+            <!-- 左側列表 -->
+            <aside class="sidebar w-80 flex flex-col p-4 overflow-y-auto">
+                <h2 class="text-sm font-semibold uppercase tracking-widest mb-4 opacity-70 px-2">文件列表</h2>
+                <div id="file-list" class="space-y-2">
+                    <!-- 動態渲染檔案 -->
+                </div>
+            </aside>
+
+            <!-- 右側預覽 -->
+            <section class="flex-1 bg-white p-6 flex flex-col">
+                <div id="pdf-header" class="mb-4 flex justify-between items-center">
+                    <h3 id="current-title" class="text-xl font-medium text-[var(--color-espresso)]">請選擇文件</h3>
+                    <span id="file-info" class="text-sm text-gray-500 italic">PDF 預覽模式</span>
+                </div>
+                <div class="flex-1 rounded-lg border-2 border-dashed border-[var(--color-latte)] overflow-hidden bg-gray-50 relative">
+                    <iframe id="pdf-frame" class="w-full h-full" src="" frameborder="0"></iframe>
+                    <div id="no-selection" class="absolute inset-0 flex flex-col items-center justify-center text-gray-400">
+                        <i class="fas fa-file-pdf text-6xl mb-4"></i>
+                        <p>點擊左側列表開始閱讀</p>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- 頁面 2: 下載專區 -->
+        <div id="download-section" class="hidden flex-1 p-10 overflow-y-auto bg-[var(--color-cream)]">
+            <div class="max-w-4xl mx-auto">
+                <div class="mb-10 text-center">
+                    <h2 class="text-3xl font-bold mb-2">檔案下載專區</h2>
+                    <p class="text-[var(--color-mocha)]">請輸入存取密碼以開啟下載權限</p>
+                </div>
+
+                <!-- 密碼驗證區 -->
+                <div id="password-gate" class="glass-card p-8 rounded-2xl shadow-xl max-md mx-auto mb-10 text-center">
+                    <i class="fas fa-lock text-4xl mb-4 text-[var(--color-mocha)]"></i>
+                    <input type="password" id="access-password" placeholder="輸入密碼..." 
+                           class="w-full p-3 rounded-lg border border-[var(--color-milk-tea)] focus:ring-2 focus:ring-[var(--color-mocha)] outline-none mb-4 text-center">
+                    <button onclick="verifyPassword()" class="btn-primary w-full py-3 rounded-lg font-bold">驗證解鎖</button>
+                    <p id="error-msg" class="text-red-400 text-sm mt-2 hidden">密碼錯誤，請再試一次</p>
+                </div>
+
+                <!-- 下載列表 (預設隱藏) -->
+                <div id="download-list" class="hidden grid gap-4">
+                    <!-- 動態渲染下載項 -->
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        /**
+         * 檔案清單設定
+         * 因為檔案與 index.html 在同一個資料夾，直接填寫檔名即可。
+         * 請確保實際檔案名稱與此處一致。
+         */
+        const pdfFiles = [
+            { id: 1, title: "JEDEC Spec. : JESD84-B51", url: "JESD84-B51.pdf" },
+            { id: 2, title: "eMMC5.1簡介", url: "eMMC51.pdf" },
+            { id: 3, title: "eMMC_RPMB_數位保險箱深度解析", url: "RPMB.pdf" }
+        ];
+
+        const MASTER_PASSWORD = "ms230";
+
+        // 初始化
+        window.onload = () => {
+            renderFiles();
+        };
+
+        // 切換頁籤
+        function switchTab(tab) {
+            const viewer = document.getElementById('viewer-section');
+            const downloader = document.getElementById('download-section');
+            
+            if (tab === 'viewer') {
+                viewer.classList.remove('hidden');
+                downloader.classList.add('hidden');
+            } else {
+                viewer.classList.add('hidden');
+                downloader.classList.remove('hidden');
+            }
+        }
+
+        // 渲染列表
+        function renderFiles() {
+            // 渲染閱覽側邊欄
+            const listContainer = document.getElementById('file-list');
+            listContainer.innerHTML = pdfFiles.map(file => `
+                <button onclick="loadPDF(${file.id})" 
+                        id="file-btn-${file.id}"
+                        class="w-full text-left p-4 rounded-xl transition-all duration-200 hover:bg-white/50 flex items-center space-x-3 group">
+                    <i class="fas fa-file-pdf text-[var(--color-mocha)] group-hover:scale-110 transition"></i>
+                    <span class="text-sm font-medium truncate">${file.title}</span>
+                </button>
+            `).join('');
+
+            // 渲染下載清單
+            const downloadContainer = document.getElementById('download-list');
+            downloadContainer.innerHTML = pdfFiles.map(file => `
+                <div class="glass-card p-5 rounded-xl flex items-center justify-between shadow-sm">
+                    <div class="flex items-center space-x-4">
+                        <div class="w-12 h-12 bg-[var(--color-latte)] rounded-full flex items-center justify-center">
+                            <i class="fas fa-download text-[var(--color-mocha)]"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-bold">${file.title}</h4>
+                            <p class="text-xs text-gray-500">PDF 文件 • ${file.size}</p>
+                        </div>
+                    </div>
+                    <a href="${file.url}" download="${file.title}.pdf" class="btn-primary px-6 py-2 rounded-full text-sm">點擊下載</a>
+                </div>
+            `).join('');
+        }
+
+        // 載入 PDF 到右側
+        function loadPDF(id) {
+            const file = pdfFiles.find(f => f.id === id);
+            const frame = document.getElementById('pdf-frame');
+            const noSelection = document.getElementById('no-selection');
+            const currentTitle = document.getElementById('current-title');
+
+            // 更新按鈕樣式
+            document.querySelectorAll('#file-list button').forEach(btn => btn.classList.remove('active-file'));
+            document.getElementById(`file-btn-${id}`).classList.add('active-file');
+
+            // 更新預覽視窗
+            noSelection.classList.add('hidden');
+            frame.src = file.url;
+            currentTitle.innerText = file.title;
+        }
+
+        // 密碼驗證
+        function verifyPassword() {
+            const input = document.getElementById('access-password').value;
+            const gate = document.getElementById('password-gate');
+            const list = document.getElementById('download-list');
+            const error = document.getElementById('error-msg');
+
+            if (input === MASTER_PASSWORD) {
+                gate.classList.add('hidden');
+                list.classList.remove('hidden');
+                error.classList.add('hidden');
+            } else {
+                error.classList.remove('hidden');
+                // 增加抖動動畫提醒
+                gate.classList.add('animate-pulse');
+                setTimeout(() => gate.classList.remove('animate-pulse'), 500);
+            }
+        }
+    </script>
+</body>
+</html>
