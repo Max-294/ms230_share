@@ -31,9 +31,9 @@
         @media (max-width: 768px) {
             .sidebar {
                 position: absolute;
-                z-index: 20;
+                z-index: 40;
                 height: 100%;
-                width: 75%;
+                width: 80%;
                 transform: translateX(-100%);
             }
             .sidebar.active {
@@ -44,7 +44,7 @@
                 position: fixed;
                 inset: 0;
                 background: rgba(0,0,0,0.5);
-                z-index: 15;
+                z-index: 35;
             }
             .overlay.active {
                 display: block;
@@ -87,13 +87,12 @@
 </head>
 <body class="h-screen flex flex-col">
 
-    <!-- 遮罩層 (手機版選單開啟時使用) -->
+    <!-- 遮罩層 -->
     <div id="sidebar-overlay" class="overlay" onclick="toggleSidebar()"></div>
 
     <!-- 頂部導航 -->
     <header class="h-16 flex items-center justify-between px-4 md:px-8 bg-white shadow-sm z-30">
         <div class="flex items-center space-x-2">
-            <!-- 手機版選單按鈕 -->
             <button id="menu-toggle" onclick="toggleSidebar()" class="md:hidden p-2 text-[var(--color-mocha)]">
                 <i class="fas fa-bars text-xl"></i>
             </button>
@@ -101,8 +100,8 @@
             <span class="text-lg md:text-xl font-bold tracking-wider">知識分享專區</span>
         </div>
         <nav class="flex space-x-4 md:space-x-6">
-            <button onclick="switchTab('viewer')" class="text-sm md:text-base hover:text-[var(--color-mocha)] transition">閱覽</button>
-            <button onclick="switchTab('download')" class="text-sm md:text-base hover:text-[var(--color-mocha)] transition">下載</button>
+            <button onclick="switchTab('viewer')" class="text-sm md:text-base hover:text-[var(--color-mocha)] transition font-medium">閱覽</button>
+            <button onclick="switchTab('download')" class="text-sm md:text-base hover:text-[var(--color-mocha)] transition font-medium">下載</button>
         </nav>
     </header>
 
@@ -110,54 +109,75 @@
         
         <!-- 頁面 1: 文檔閱覽器 -->
         <div id="viewer-section" class="flex flex-1 w-full">
-            <!-- 左側列表 (手機版為側滑選單) -->
+            <!-- 左側列表 -->
             <aside id="sidebar" class="sidebar w-80 flex flex-col p-4 overflow-y-auto">
-                <div class="flex justify-between items-center mb-4 md:mb-4">
-                    <h2 class="text-sm font-semibold uppercase tracking-widest opacity-70 px-2">文件列表</h2>
-                    <button class="md:hidden p-2" onclick="toggleSidebar()">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xs font-bold uppercase tracking-widest opacity-50 px-2 text-[var(--color-espresso)]">文件清單</h2>
+                    <button class="md:hidden p-2 text-[var(--color-espresso)]" onclick="toggleSidebar()">
                         <i class="fas fa-times"></i>
                     </button>
                 </div>
                 <div id="file-list" class="space-y-2">
                     <!-- 動態渲染檔案 -->
                 </div>
+                <!-- 移動端提示 -->
+                <div class="mt-auto p-4 md:hidden bg-white/30 rounded-lg text-xs italic text-[var(--color-espresso)] opacity-70">
+                    提示：手機版點擊檔案將直接開啟原生閱讀器以獲得最佳體驗。
+                </div>
             </aside>
 
             <!-- 右側預覽 -->
-            <section class="flex-1 bg-white p-3 md:p-6 flex flex-col w-full">
-                <div id="pdf-header" class="mb-3 flex justify-between items-center">
-                    <h3 id="current-title" class="text-base md:text-xl font-medium text-[var(--color-espresso)] truncate pr-4">請選擇文件</h3>
-                    <span id="file-info" class="hidden sm:inline text-sm text-gray-500 italic whitespace-nowrap">PDF 預覽模式</span>
+            <section class="flex-1 bg-white p-4 md:p-6 flex flex-col w-full">
+                <div id="pdf-header" class="mb-4 flex justify-between items-center">
+                    <h3 id="current-title" class="text-base md:text-xl font-semibold text-[var(--color-espresso)] truncate pr-4">請選擇文件</h3>
+                    <div class="flex space-x-2">
+                        <button id="open-new-tab" class="hidden text-sm bg-[var(--color-latte)] px-3 py-1 rounded-md hover:bg-[var(--color-milk-tea)] transition">
+                            <i class="fas fa-external-link-alt mr-1"></i> 新分頁開啟
+                        </button>
+                    </div>
                 </div>
-                <!-- 預覽容器：在手機版會自動撐開 -->
-                <div class="flex-1 rounded-lg border-2 border-dashed border-[var(--color-latte)] overflow-hidden bg-gray-50 relative">
-                    <iframe id="pdf-frame" class="w-full h-full" src="" frameborder="0"></iframe>
-                    <div id="no-selection" class="absolute inset-0 flex flex-col items-center justify-center text-gray-400 p-4 text-center">
-                        <i class="fas fa-file-pdf text-5xl md:text-6xl mb-4"></i>
-                        <p class="text-sm md:text-base">請點擊上方選單或左側列表開始閱讀</p>
+                
+                <div class="flex-1 rounded-xl border border-[var(--color-milk-tea)] overflow-hidden bg-gray-50 relative shadow-inner">
+                    <iframe id="pdf-frame" class="w-full h-full hidden md:block" src="" frameborder="0"></iframe>
+                    
+                    <!-- 預設提示 -->
+                    <div id="no-selection" class="absolute inset-0 flex flex-col items-center justify-center text-gray-400 p-8 text-center">
+                        <i class="fas fa-file-pdf text-6xl mb-4 opacity-20"></i>
+                        <p class="text-lg font-medium mb-1">準備好開始閱讀了嗎？</p>
+                        <p class="text-sm">請從左側列表選擇一份文件進行預覽</p>
+                    </div>
+
+                    <!-- 行動端佔位圖 (點擊列表後顯示) -->
+                    <div id="mobile-placeholder" class="hidden absolute inset-0 flex flex-col items-center justify-center p-8 text-center bg-white">
+                        <div class="w-20 h-20 bg-[var(--color-latte)] rounded-full flex items-center justify-center mb-4">
+                            <i class="fas fa-mobile-alt text-3xl text-[var(--color-mocha)]"></i>
+                        </div>
+                        <h4 class="font-bold text-[var(--color-espresso)] mb-2">文件已在新分頁開啟</h4>
+                        <p class="text-sm text-gray-500 mb-6">行動裝置已優化為原生閱讀模式，支援縮放與完整翻頁功能。</p>
+                        <button onclick="toggleSidebar()" class="btn-primary px-8 py-2 rounded-full text-sm">切換其他文件</button>
                     </div>
                 </div>
             </section>
         </div>
 
         <!-- 頁面 2: 下載專區 -->
-        <div id="download-section" class="hidden flex-1 p-4 md:p-10 overflow-y-auto bg-[var(--color-cream)]">
+        <div id="download-section" class="hidden flex-1 p-6 md:p-10 overflow-y-auto bg-[var(--color-cream)]">
             <div class="max-w-4xl mx-auto">
-                <div class="mb-6 md:mb-10 text-center">
+                <div class="mb-8 text-center">
                     <h2 class="text-2xl md:text-3xl font-bold mb-2">檔案下載專區</h2>
-                    <p class="text-[var(--color-mocha)]">請輸入存取密碼以開啟下載權限</p>
+                    <p class="text-[var(--color-mocha)]">受保護的內容，請驗證後下載</p>
                 </div>
 
-                <!-- 密碼驗證區 -->
-                <div id="password-gate" class="glass-card p-6 md:p-8 rounded-2xl shadow-xl max-w-sm mx-auto mb-10 text-center">
-                    <i class="fas fa-lock text-3xl md:text-4xl mb-4 text-[var(--color-mocha)]"></i>
-                    <input type="password" id="access-password" placeholder="輸入密碼..." 
-                           class="w-full p-3 rounded-lg border border-[var(--color-milk-tea)] focus:ring-2 focus:ring-[var(--color-mocha)] outline-none mb-4 text-center">
-                    <button onclick="verifyPassword()" class="btn-primary w-full py-3 rounded-lg font-bold">驗證解鎖</button>
-                    <p id="error-msg" class="text-red-400 text-sm mt-2 hidden">密碼錯誤</p>
+                <div id="password-gate" class="glass-card p-8 rounded-2xl shadow-xl max-w-sm mx-auto mb-10 text-center">
+                    <div class="mb-6 relative inline-block">
+                        <i class="fas fa-shield-alt text-5xl text-[var(--color-mocha)]"></i>
+                    </div>
+                    <input type="password" id="access-password" placeholder="請輸入密碼" 
+                           class="w-full p-3 rounded-lg border border-[var(--color-milk-tea)] focus:ring-2 focus:ring-[var(--color-mocha)] outline-none mb-4 text-center tracking-widest font-bold">
+                    <button onclick="verifyPassword()" class="btn-primary w-full py-3 rounded-lg font-bold shadow-lg">驗證解鎖</button>
+                    <p id="error-msg" class="text-red-500 text-sm mt-3 font-medium hidden">驗證失敗，請檢查密碼</p>
                 </div>
 
-                <!-- 下載列表 (預設隱藏) -->
                 <div id="download-list" class="hidden grid gap-4">
                     <!-- 動態渲染下載項 -->
                 </div>
@@ -178,7 +198,6 @@
             renderFiles();
         };
 
-        // 手機版側邊欄切換
         function toggleSidebar() {
             const sidebar = document.getElementById('sidebar');
             const overlay = document.getElementById('sidebar-overlay');
@@ -186,7 +205,6 @@
             overlay.classList.toggle('active');
         }
 
-        // 切換頁籤
         function switchTab(tab) {
             const viewer = document.getElementById('viewer-section');
             const downloader = document.getElementById('download-section');
@@ -202,7 +220,6 @@
                 menuToggle.classList.add('invisible');
             }
             
-            // 切換時關閉側邊欄
             const sidebar = document.getElementById('sidebar');
             const overlay = document.getElementById('sidebar-overlay');
             sidebar.classList.remove('active');
@@ -212,48 +229,72 @@
         function renderFiles() {
             const listContainer = document.getElementById('file-list');
             listContainer.innerHTML = pdfFiles.map(file => `
-                <button onclick="loadPDF(${file.id})" 
+                <button onclick="handleFileClick(${file.id})" 
                         id="file-btn-${file.id}"
-                        class="w-full text-left p-4 rounded-xl transition-all duration-200 hover:bg-white/50 flex items-center space-x-3 group">
-                    <i class="fas fa-file-pdf text-[var(--color-mocha)] group-hover:scale-110 transition"></i>
-                    <span class="text-sm font-medium truncate">${file.title}</span>
+                        class="w-full text-left p-4 rounded-xl transition-all duration-200 hover:bg-white/60 flex items-center space-x-3 group border border-transparent hover:border-[var(--color-milk-tea)]">
+                    <div class="w-8 h-8 rounded-lg bg-white flex items-center justify-center text-[var(--color-mocha)] group-hover:scale-110 transition">
+                        <i class="fas fa-file-pdf"></i>
+                    </div>
+                    <span class="text-sm font-semibold truncate flex-1">${file.title}</span>
+                    <i class="fas fa-chevron-right text-xs opacity-0 group-hover:opacity-30"></i>
                 </button>
             `).join('');
 
             const downloadContainer = document.getElementById('download-list');
             downloadContainer.innerHTML = pdfFiles.map(file => `
-                <div class="glass-card p-4 md:p-5 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between shadow-sm gap-4">
+                <div class="glass-card p-5 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between shadow-sm gap-4 hover:shadow-md transition">
                     <div class="flex items-center space-x-4">
-                        <div class="w-10 h-10 md:w-12 md:h-12 bg-[var(--color-latte)] rounded-full flex items-center justify-center flex-shrink-0">
-                            <i class="fas fa-download text-[var(--color-mocha)]"></i>
+                        <div class="w-12 h-12 bg-white rounded-xl flex items-center justify-center shadow-sm">
+                            <i class="fas fa-cloud-download-alt text-xl text-[var(--color-mocha)]"></i>
                         </div>
                         <div>
-                            <h4 class="font-bold text-sm md:text-base">${file.title}</h4>
-                            <p class="text-xs text-gray-500">PDF • ${file.size}</p>
+                            <h4 class="font-bold text-base text-[var(--color-espresso)]">${file.title}</h4>
+                            <p class="text-xs text-gray-400 font-medium tracking-tight uppercase">Portable Document Format • ${file.size}</p>
                         </div>
                     </div>
-                    <a href="${file.url}" download="${file.title}.pdf" class="btn-primary w-full sm:w-auto px-6 py-2 rounded-full text-sm text-center">下載</a>
+                    <a href="${file.url}" download="${file.title}.pdf" class="btn-primary w-full sm:w-auto px-8 py-2.5 rounded-full text-sm font-bold shadow-md hover:shadow-lg text-center">下載檔案</a>
                 </div>
             `).join('');
         }
 
-        function loadPDF(id) {
+        function handleFileClick(id) {
+            const isMobile = window.innerWidth <= 768;
             const file = pdfFiles.find(f => f.id === id);
+            
+            if (isMobile) {
+                // 手機版：直接新分頁開啟檔案，避免 iframe 限制
+                window.open(file.url, '_blank');
+                
+                // 更新 UI 狀態
+                document.getElementById('no-selection').classList.add('hidden');
+                document.getElementById('mobile-placeholder').classList.remove('hidden');
+                document.getElementById('current-title').innerText = file.title;
+                
+                toggleSidebar();
+            } else {
+                // 桌機版：維持原本的 iframe 預覽
+                loadPDF(file);
+            }
+        }
+
+        function loadPDF(file) {
             const frame = document.getElementById('pdf-frame');
             const noSelection = document.getElementById('no-selection');
+            const mobilePlaceholder = document.getElementById('mobile-placeholder');
             const currentTitle = document.getElementById('current-title');
+            const openNewTabBtn = document.getElementById('open-new-tab');
 
             document.querySelectorAll('#file-list button').forEach(btn => btn.classList.remove('active-file'));
-            document.getElementById(`file-btn-${id}`).classList.add('active-file');
+            document.getElementById(`file-btn-${file.id}`).classList.add('active-file');
 
             noSelection.classList.add('hidden');
+            mobilePlaceholder.classList.add('hidden');
             frame.src = file.url;
             currentTitle.innerText = file.title;
-
-            // 在手機版選擇檔案後自動關閉側邊欄
-            if (window.innerWidth <= 768) {
-                toggleSidebar();
-            }
+            
+            // 顯示「新分頁開啟」按鈕
+            openNewTabBtn.classList.remove('hidden');
+            openNewTabBtn.onclick = () => window.open(file.url, '_blank');
         }
 
         function verifyPassword() {
