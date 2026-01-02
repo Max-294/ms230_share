@@ -19,11 +19,36 @@
             background-color: var(--color-cream);
             color: var(--color-espresso);
             font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+            overflow: hidden;
         }
 
         .sidebar {
             background-color: var(--color-latte);
             border-right: 1px solid var(--color-milk-tea);
+            transition: transform 0.3s ease-in-out;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                position: absolute;
+                z-index: 20;
+                height: 100%;
+                width: 75%;
+                transform: translateX(-100%);
+            }
+            .sidebar.active {
+                transform: translateX(0);
+            }
+            .overlay {
+                display: none;
+                position: fixed;
+                inset: 0;
+                background: rgba(0,0,0,0.5);
+                z-index: 15;
+            }
+            .overlay.active {
+                display: block;
+            }
         }
 
         .active-file {
@@ -62,61 +87,74 @@
 </head>
 <body class="h-screen flex flex-col">
 
+    <!-- 遮罩層 (手機版選單開啟時使用) -->
+    <div id="sidebar-overlay" class="overlay" onclick="toggleSidebar()"></div>
+
     <!-- 頂部導航 -->
-    <header class="h-16 flex items-center justify-between px-8 bg-white shadow-sm z-10">
+    <header class="h-16 flex items-center justify-between px-4 md:px-8 bg-white shadow-sm z-30">
         <div class="flex items-center space-x-2">
-            <i class="fas fa-book-open text-2xl text-[var(--color-mocha)]"></i>
-            <span class="text-xl font-bold tracking-wider">知識分享專區</span>
+            <!-- 手機版選單按鈕 -->
+            <button id="menu-toggle" onclick="toggleSidebar()" class="md:hidden p-2 text-[var(--color-mocha)]">
+                <i class="fas fa-bars text-xl"></i>
+            </button>
+            <i class="fas fa-book-open text-xl md:text-2xl text-[var(--color-mocha)]"></i>
+            <span class="text-lg md:text-xl font-bold tracking-wider">知識分享專區</span>
         </div>
-        <nav class="flex space-x-6">
-            <button onclick="switchTab('viewer')" class="hover:text-[var(--color-mocha)] transition">文檔閱覽</button>
-            <button onclick="switchTab('download')" class="hover:text-[var(--color-mocha)] transition">下載專區</button>
+        <nav class="flex space-x-4 md:space-x-6">
+            <button onclick="switchTab('viewer')" class="text-sm md:text-base hover:text-[var(--color-mocha)] transition">閱覽</button>
+            <button onclick="switchTab('download')" class="text-sm md:text-base hover:text-[var(--color-mocha)] transition">下載</button>
         </nav>
     </header>
 
-    <main class="flex-1 flex overflow-hidden">
+    <main class="flex-1 flex overflow-hidden relative">
         
         <!-- 頁面 1: 文檔閱覽器 -->
         <div id="viewer-section" class="flex flex-1 w-full">
-            <!-- 左側列表 -->
-            <aside class="sidebar w-80 flex flex-col p-4 overflow-y-auto">
-                <h2 class="text-sm font-semibold uppercase tracking-widest mb-4 opacity-70 px-2">文件列表</h2>
+            <!-- 左側列表 (手機版為側滑選單) -->
+            <aside id="sidebar" class="sidebar w-80 flex flex-col p-4 overflow-y-auto">
+                <div class="flex justify-between items-center mb-4 md:mb-4">
+                    <h2 class="text-sm font-semibold uppercase tracking-widest opacity-70 px-2">文件列表</h2>
+                    <button class="md:hidden p-2" onclick="toggleSidebar()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
                 <div id="file-list" class="space-y-2">
                     <!-- 動態渲染檔案 -->
                 </div>
             </aside>
 
             <!-- 右側預覽 -->
-            <section class="flex-1 bg-white p-6 flex flex-col">
-                <div id="pdf-header" class="mb-4 flex justify-between items-center">
-                    <h3 id="current-title" class="text-xl font-medium text-[var(--color-espresso)]">請選擇文件</h3>
-                    <span id="file-info" class="text-sm text-gray-500 italic">PDF 預覽模式</span>
+            <section class="flex-1 bg-white p-3 md:p-6 flex flex-col w-full">
+                <div id="pdf-header" class="mb-3 flex justify-between items-center">
+                    <h3 id="current-title" class="text-base md:text-xl font-medium text-[var(--color-espresso)] truncate pr-4">請選擇文件</h3>
+                    <span id="file-info" class="hidden sm:inline text-sm text-gray-500 italic whitespace-nowrap">PDF 預覽模式</span>
                 </div>
+                <!-- 預覽容器：在手機版會自動撐開 -->
                 <div class="flex-1 rounded-lg border-2 border-dashed border-[var(--color-latte)] overflow-hidden bg-gray-50 relative">
                     <iframe id="pdf-frame" class="w-full h-full" src="" frameborder="0"></iframe>
-                    <div id="no-selection" class="absolute inset-0 flex flex-col items-center justify-center text-gray-400">
-                        <i class="fas fa-file-pdf text-6xl mb-4"></i>
-                        <p>點擊左側列表開始閱讀</p>
+                    <div id="no-selection" class="absolute inset-0 flex flex-col items-center justify-center text-gray-400 p-4 text-center">
+                        <i class="fas fa-file-pdf text-5xl md:text-6xl mb-4"></i>
+                        <p class="text-sm md:text-base">請點擊上方選單或左側列表開始閱讀</p>
                     </div>
                 </div>
             </section>
         </div>
 
         <!-- 頁面 2: 下載專區 -->
-        <div id="download-section" class="hidden flex-1 p-10 overflow-y-auto bg-[var(--color-cream)]">
+        <div id="download-section" class="hidden flex-1 p-4 md:p-10 overflow-y-auto bg-[var(--color-cream)]">
             <div class="max-w-4xl mx-auto">
-                <div class="mb-10 text-center">
-                    <h2 class="text-3xl font-bold mb-2">檔案下載專區</h2>
+                <div class="mb-6 md:mb-10 text-center">
+                    <h2 class="text-2xl md:text-3xl font-bold mb-2">檔案下載專區</h2>
                     <p class="text-[var(--color-mocha)]">請輸入存取密碼以開啟下載權限</p>
                 </div>
 
                 <!-- 密碼驗證區 -->
-                <div id="password-gate" class="glass-card p-8 rounded-2xl shadow-xl max-md mx-auto mb-10 text-center">
-                    <i class="fas fa-lock text-4xl mb-4 text-[var(--color-mocha)]"></i>
+                <div id="password-gate" class="glass-card p-6 md:p-8 rounded-2xl shadow-xl max-w-sm mx-auto mb-10 text-center">
+                    <i class="fas fa-lock text-3xl md:text-4xl mb-4 text-[var(--color-mocha)]"></i>
                     <input type="password" id="access-password" placeholder="輸入密碼..." 
                            class="w-full p-3 rounded-lg border border-[var(--color-milk-tea)] focus:ring-2 focus:ring-[var(--color-mocha)] outline-none mb-4 text-center">
                     <button onclick="verifyPassword()" class="btn-primary w-full py-3 rounded-lg font-bold">驗證解鎖</button>
-                    <p id="error-msg" class="text-red-400 text-sm mt-2 hidden">密碼錯誤，請再試一次</p>
+                    <p id="error-msg" class="text-red-400 text-sm mt-2 hidden">密碼錯誤</p>
                 </div>
 
                 <!-- 下載列表 (預設隱藏) -->
@@ -128,11 +166,6 @@
     </main>
 
     <script>
-        /**
-         * 檔案清單設定
-         * 因為檔案與 index.html 在同一個資料夾，直接填寫檔名即可。
-         * 請確保實際檔案名稱與此處一致。
-         */
         const pdfFiles = [
             { id: 1, title: "JEDEC Spec. : JESD84-B51", url: "JESD84-B51.pdf" },
             { id: 2, title: "eMMC5.1簡介", url: "eMMC51.pdf" },
@@ -141,28 +174,42 @@
 
         const MASTER_PASSWORD = "ms230";
 
-        // 初始化
         window.onload = () => {
             renderFiles();
         };
+
+        // 手機版側邊欄切換
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            sidebar.classList.toggle('active');
+            overlay.classList.toggle('active');
+        }
 
         // 切換頁籤
         function switchTab(tab) {
             const viewer = document.getElementById('viewer-section');
             const downloader = document.getElementById('download-section');
+            const menuToggle = document.getElementById('menu-toggle');
             
             if (tab === 'viewer') {
                 viewer.classList.remove('hidden');
                 downloader.classList.add('hidden');
+                menuToggle.classList.remove('invisible');
             } else {
                 viewer.classList.add('hidden');
                 downloader.classList.remove('hidden');
+                menuToggle.classList.add('invisible');
             }
+            
+            // 切換時關閉側邊欄
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            sidebar.classList.remove('active');
+            overlay.classList.remove('active');
         }
 
-        // 渲染列表
         function renderFiles() {
-            // 渲染閱覽側邊欄
             const listContainer = document.getElementById('file-list');
             listContainer.innerHTML = pdfFiles.map(file => `
                 <button onclick="loadPDF(${file.id})" 
@@ -173,42 +220,42 @@
                 </button>
             `).join('');
 
-            // 渲染下載清單
             const downloadContainer = document.getElementById('download-list');
             downloadContainer.innerHTML = pdfFiles.map(file => `
-                <div class="glass-card p-5 rounded-xl flex items-center justify-between shadow-sm">
+                <div class="glass-card p-4 md:p-5 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between shadow-sm gap-4">
                     <div class="flex items-center space-x-4">
-                        <div class="w-12 h-12 bg-[var(--color-latte)] rounded-full flex items-center justify-center">
+                        <div class="w-10 h-10 md:w-12 md:h-12 bg-[var(--color-latte)] rounded-full flex items-center justify-center flex-shrink-0">
                             <i class="fas fa-download text-[var(--color-mocha)]"></i>
                         </div>
                         <div>
-                            <h4 class="font-bold">${file.title}</h4>
-                            <p class="text-xs text-gray-500">PDF 文件 • ${file.size}</p>
+                            <h4 class="font-bold text-sm md:text-base">${file.title}</h4>
+                            <p class="text-xs text-gray-500">PDF • ${file.size}</p>
                         </div>
                     </div>
-                    <a href="${file.url}" download="${file.title}.pdf" class="btn-primary px-6 py-2 rounded-full text-sm">點擊下載</a>
+                    <a href="${file.url}" download="${file.title}.pdf" class="btn-primary w-full sm:w-auto px-6 py-2 rounded-full text-sm text-center">下載</a>
                 </div>
             `).join('');
         }
 
-        // 載入 PDF 到右側
         function loadPDF(id) {
             const file = pdfFiles.find(f => f.id === id);
             const frame = document.getElementById('pdf-frame');
             const noSelection = document.getElementById('no-selection');
             const currentTitle = document.getElementById('current-title');
 
-            // 更新按鈕樣式
             document.querySelectorAll('#file-list button').forEach(btn => btn.classList.remove('active-file'));
             document.getElementById(`file-btn-${id}`).classList.add('active-file');
 
-            // 更新預覽視窗
             noSelection.classList.add('hidden');
             frame.src = file.url;
             currentTitle.innerText = file.title;
+
+            // 在手機版選擇檔案後自動關閉側邊欄
+            if (window.innerWidth <= 768) {
+                toggleSidebar();
+            }
         }
 
-        // 密碼驗證
         function verifyPassword() {
             const input = document.getElementById('access-password').value;
             const gate = document.getElementById('password-gate');
@@ -221,7 +268,6 @@
                 error.classList.add('hidden');
             } else {
                 error.classList.remove('hidden');
-                // 增加抖動動畫提醒
                 gate.classList.add('animate-pulse');
                 setTimeout(() => gate.classList.remove('animate-pulse'), 500);
             }
